@@ -1,0 +1,28 @@
+{
+  "name": "permessi",
+  "version": "1.0.0",
+  "description": "permessi",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VaianoSoftwares/permessi.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VaianoSoftwares/permessi/issues"
+  },
+  "homepage": "https://github.com/VaianoSoftwares/permessi#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "dotenv": "^16.0.0",
+    "express": "^4.17.3",
+    "joi": "^17.6.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongodb": "^4.3.1"
+  },
+  "type": "module"
+}

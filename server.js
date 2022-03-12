@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import cors from "cors";
 
 import authRoutes from "./auth/auth.routes.js";
 
@@ -10,6 +11,8 @@ const __dirname = path.resolve();
 // middlewares configs
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+app.use(cors({ exposedHeaders: "auth-token" }));
 
 // print out request endpoint url & method
 app.use((req, res, next) => {

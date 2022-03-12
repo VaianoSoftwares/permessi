@@ -51,7 +51,7 @@ export default class UsersDAO {
 
     static async pushPermessi(username, dataToPush = []) {
         try {
-            return await enums.updateOne(
+            return await users.updateOne(
               { username: username },
               { $push: { permessi: { $each: dataToPush } } }
             );
@@ -63,7 +63,7 @@ export default class UsersDAO {
 
     static async pullPermessi(username, dataToPull = []) {
         try {
-            return await enums.updateOne(
+            return await users.updateOne(
               { username: username },
               { $pull: { permessi: { $in: dataToPull } } }
             );

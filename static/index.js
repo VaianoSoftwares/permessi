@@ -151,6 +151,30 @@ const checkBoxesEvent = (input = new Element()) => {
       .catch((err) => console.log("checkBoxesEvent | ", err));
 };
 
+const checkBoxesEventAdmin = (input = new Element()) => {
+  const { value } = input;
+  console.log("checkBoxesEvent | ", value);
+
+  const permesso = JSON.parse(value);
+
+  postPermessi("/api/v1/auth/permessi/pull", permesso)
+    .then((result) => {
+      console.log("checkBoxesEvent | result: ", result);
+
+      if (!result.success) {
+        throw new Error(result.msg);
+      }
+
+      permessi = permessi.filter((perm) => perm != permesso);
+
+      const numPermessi = maxPermessi - permessiCounter(permesso.date);
+      const dayTd = input.parentElement;
+      const checkboxes = listOfPrenotati(permesso.date);
+      dayTd.innerHTML = `${new Date(permesso.date).getDate()}<br>Disponibilita\': ${numPermessi}${checkboxes}`;
+    })
+    .catch((err) => console.log("checkBoxesEvent | ", err));
+};
+
 const setCurrMonthCalendar = (date = new Date(), currMonthH1, daysList) => {
     const currYear = date.getFullYear();
     const currMonth = date.getMonth();
@@ -158,32 +182,65 @@ const setCurrMonthCalendar = (date = new Date(), currMonthH1, daysList) => {
 
     const firstDay = getFirstDayMonth(currMonth, currYear);
     const currTime = new Date();
+    const isAdmin = sessionStorage.getItem("admin");
     let dateCopy = new Date(date.getFullYear(), date.getMonth(), 1);
     dateCopy = new Date(dateCopy.setDate(dateCopy.getDate() + 1 - firstDay));
     daysList.forEach((day) => {
         const numPermessi = maxPermessi - permessiCounter(dateCopy);
-        const prenotato = hasPermesso(dateCopy);
-        if(dateCopy < currTime || dateCopy.getMonth() !== currMonth || (numPermessi < 1 && !prenotato)) {
-            day.innerHTML = dateCopy.getDate().toString();
-            day.classList.remove("prenotato");
-            day.classList.add("not-available");
+        const notAvailable = dateCopy < currTime || dateCopy.getMonth() != currMonth;
+        if(isAdmin == "true") {
+          setDayTdAdmin(day, dateCopy, notAvailable, numPermessi);
         }
         else {
-            day.classList.remove("not-available");
-            const partialHtml = `${dateCopy.getDate()}<br>Disponibilita\': ${numPermessi}<br>`;
-            if(prenotato) {
-              day.innerHTML = `${partialHtml}Prenotato`;
-              day.classList.add("prenotato");
-            }
-            else {
-              const checkbox = `<input type="checkbox" value="${dateCopy.toDateString()}" onchange=\"checkBoxesEvent(this)\"></input>`;
-              day.innerHTML = `${partialHtml}${checkbox}`;
-              day.classList.remove("prenotato");
-            }
+          setDayTd(day, dateCopy, notAvailable, numPermessi);
         }
         dateCopy = new Date(dateCopy.setDate(dateCopy.getDate() + 1));
     });
 };
+
+const setDayTd = (day, date = new Date(), notAvailable = false, numPermessi = 0) => {
+  const prenotato = hasPermesso(dateCopy);
+  if (notAvailable || (numPermessi < 1 && !prenotato)) {
+    day.innerHTML = date.getDate().toString();
+    day.classList.remove("prenotato");
+    day.classList.add("not-available");
+  } else {
+    day.classList.remove("not-available");
+    const partialHtml = `${date.getDate()}<br>Disponibilita\': ${numPermessi}<br>`;
+    if (prenotato) {
+      day.innerHTML = `${partialHtml}Prenotato`;
+      day.classList.add("prenotato");
+    } else {
+      const checkbox = `<input type="checkbox" value="${date.toDateString()}" onchange=\"checkBoxesEvent(this)\"></input>`;
+      day.innerHTML = `${partialHtml}${checkbox}`;
+      day.classList.remove("prenotato");
+    }
+  }
+};
+
+const setDayTdAdmin = (day, date = new Date(), notAvailable = false, numPermessi = 0) => {
+  day.classList.remove("prenotato");
+  if (notAvailable) {
+    day.innerHTML = date.getDate().toString();
+    day.classList.add("not-available");
+  } else {
+    day.classList.remove("not-available");
+    const partialHtml = `${date.getDate()}<br>Disponibilita\': ${numPermessi}<br>`;
+    const checkboxes = listOfPrenotati(date.toDateString());
+    day.innerHTML = `${partialHtml}${checkboxes}`;
+  }
+};
+
+const listOfPrenotati = (date = "") =>
+  permessi
+    .filter((permesso) => permesso.date === date)
+    .map(
+      (permesso) =>
+        `<br>${permesso.username}&nbsp;<input type="checkbox" value="${JSON.stringify(
+          permesso
+        )}" onchange=\"checkBoxesEventAdmin(this)\"></input>`
+    )
+    .join("");
 
 const permessiCounter = (date) => {
   const dateStr =

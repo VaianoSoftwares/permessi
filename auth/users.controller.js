@@ -131,15 +131,18 @@ export default class UsersController {
   }
 
   static async apiPullPermessi(req, res) {
-    const { username, permesso } = req.body;
+    const { username, date } = req.body;
 
     try {
-      const { error } = await UsersDAO.pullPermessi(username, [permesso]);
+      if(!username || !date) {
+        throw new Error("Impossibile annulare prenotazione: dati mancanti.");
+      }
+      const { error } = await UsersDAO.pullPermessi(username, [date]);
       if (error) {
         throw new Error(error);
       }
 
-      const msg = `Prenotazione annullata: ${username} rimosso permesso per giorno ${permesso}.`;
+      const msg = `Prenotazione annullata: ${username} rimosso permesso per giorno ${date}.`;
       console.log(msg);
 
       res.json({ success: true, msg: msg });

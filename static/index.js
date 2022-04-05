@@ -1,4 +1,4 @@
-const months = [
+const MONTHS = [
     "Gennaio",
     "Febbraio",
     "Marzo",
@@ -13,36 +13,14 @@ const months = [
     "Dicembre",
 ];
 
-const maxPermessi = 3;
+const MAX_PERMESSI = 3;
 
-const loginWrapper = document.querySelector("#login-wrapper");
-const homeWrapper = document.querySelector("#home-wrapper");
+const rootDiv = document.querySelector("#root");
+const loginTemplate = document.querySelector("#login-template");
+const homeTemplate = document.querySelector("#home-template");
 
-let permessi = [];
+const permessi = new Map();
 let currDate = new Date();
-
-const getTxt = async (url = "") => {
-    try {
-        const response = await fetch(url, { method: "GET" });
-        console.log("getTxt | response: ", response);
-        return await response.text();
-    } catch(err) {
-        console.log("getTxt | ", err);
-    }
-};
-
-const getHTMLDoc = async (filename = "") => {
-    try {
-        const txtResp = await getTxt(`/api/v1/static/${filename}.html`);
-        const parser = new DOMParser();
-        const htmlDoc = parser.parseFromString(txtResp, "text/html");
-        const htmlStr = htmlDoc.body.innerHTML;
-        // console.log("getHTMLDoc | htmlStr: ", htmlStr);
-        return htmlStr;
-    } catch(err) {
-        console.log("getHTMLDoc | ", err);
-    }
-};
 
 const getJSON = async (url = "") => {
   try {
@@ -66,7 +44,10 @@ const retrivePermessi = async () => {
     if (result.success === false) {
       throw new Error(result.msg);
     }
-    permessi = result.data;
+    
+    permessi.clear();
+    result.data.forEach((permesso, index) => permessi.set(index, permesso));
+    console.log("permessi | ", permessi);
   } catch (err) {
     console.log("retrivePermessi | ", err);
   }
@@ -128,12 +109,12 @@ const checkBoxesEvent = (input = new Element()) => {
     const { value, checked } = input;
     console.log("checkBoxesEvent | ", value, " ", checked);
 
-    const permesso = {
+    const permToAdd = {
       username: sessionStorage.getItem("username"),
       date: value
     };
 
-    postPermessi("/api/v1/auth/permessi/push", permesso)
+    postPermessi("/api/v1/auth/permessi/push", permToAdd)
       .then((result) => {
         console.log("checkBoxesEvent | result: ", result);
 
@@ -141,23 +122,23 @@ const checkBoxesEvent = (input = new Element()) => {
           throw new Error(result.msg);
         }
 
-        permessi.push(permesso);
+        permessi.set(permessi.size, permToAdd);
 
-        const numPermessi = maxPermessi - permessiCounter(permesso.date);
+        const numPermessi = MAX_PERMESSI - permessiCounter(permToAdd.date);
         const dayTd = input.parentElement;
-        dayTd.innerHTML = `${new Date(permesso.date).getDate()}<br>Disponibilita\': ${numPermessi}<br>Prenotato`;
+        dayTd.innerHTML = `${new Date(permToAdd.date).getDate()}<br>Disponibilita\': ${numPermessi}<br>Prenotato`;
         dayTd.classList.add("prenotato");
       })
       .catch((err) => console.log("checkBoxesEvent | ", err));
 };
 
 const checkBoxesEventAdmin = (input = new Element()) => {
-  const { value } = input;
-  console.log("checkBoxesEvent | ", value);
+  const permKey = Number(input.value);
+  const permToDel = permessi.get(permKey);
+  console.log("checkBoxesEventAdmin | permKey: ", permKey);
+  console.log("checkBoxesEventAdmin | permToDel: ", permToDel);
 
-  const permesso = JSON.parse(value);
-
-  postPermessi("/api/v1/auth/permessi/pull", permesso)
+  postPermessi("/api/v1/auth/permessi/pull", permToDel)
     .then((result) => {
       console.log("checkBoxesEvent | result: ", result);
 
@@ -165,12 +146,12 @@ const checkBoxesEventAdmin = (input = new Element()) => {
         throw new Error(result.msg);
       }
 
-      permessi = permessi.filter((perm) => perm != permesso);
+      permessi.delete(permKey);
 
-      const numPermessi = maxPermessi - permessiCounter(permesso.date);
+      const numPermessi = MAX_PERMESSI - permessiCounter(permToDel.date);
       const dayTd = input.parentElement;
-      const checkboxes = listOfPrenotati(permesso.date);
-      dayTd.innerHTML = `${new Date(permesso.date).getDate()}<br>Disponibilita\': ${numPermessi}${checkboxes}`;
+      const checkboxes = listOfPrenotati(permToDel.date);
+      dayTd.innerHTML = `${new Date(permToDel.date).getDate()}<br>Disponibilita\': ${numPermessi}${checkboxes}`;
     })
     .catch((err) => console.log("checkBoxesEvent | ", err));
 };
@@ -178,7 +159,7 @@ const checkBoxesEventAdmin = (input = new Element()) => {
 const setCurrMonthCalendar = (date = new Date(), currMonthH1, daysList) => {
     const currYear = date.getFullYear();
     const currMonth = date.getMonth();
-    currMonthH1.innerText = `${months[currMonth]} ${currYear}`; 
+    currMonthH1.innerText = `${MONTHS[currMonth]} ${currYear}`; 
 
     const firstDay = getFirstDayMonth(currMonth, currYear);
     const currTime = new Date();
@@ -186,7 +167,7 @@ const setCurrMonthCalendar = (date = new Date(), currMonthH1, daysList) => {
     let dateCopy = new Date(date.getFullYear(), date.getMonth(), 1);
     dateCopy = new Date(dateCopy.setDate(dateCopy.getDate() + 1 - firstDay));
     daysList.forEach((day) => {
-        const numPermessi = maxPermessi - permessiCounter(dateCopy);
+        const numPermessi = MAX_PERMESSI - permessiCounter(dateCopy);
         const notAvailable = dateCopy < currTime || dateCopy.getMonth() != currMonth;
         if(isAdmin == "true") {
           setDayTdAdmin(day, dateCopy, notAvailable, numPermessi);
@@ -199,14 +180,14 @@ const setCurrMonthCalendar = (date = new Date(), currMonthH1, daysList) => {
 };
 
 const setDayTd = (day, date = new Date(), notAvailable = false, numPermessi = 0) => {
-  const prenotato = hasPermesso(dateCopy);
+  const prenotato = hasPermesso(date);
   if (notAvailable || (numPermessi < 1 && !prenotato)) {
     day.innerHTML = date.getDate().toString();
     day.classList.remove("prenotato");
     day.classList.add("not-available");
   } else {
     day.classList.remove("not-available");
-    const partialHtml = `${date.getDate()}<br>Disponibilita\': ${numPermessi}<br>`;
+    const partialHtml = `${date.getDate()}<br>Disponibilità: ${numPermessi}<br>`;
     if (prenotato) {
       day.innerHTML = `${partialHtml}Prenotato`;
       day.classList.add("prenotato");
@@ -225,20 +206,18 @@ const setDayTdAdmin = (day, date = new Date(), notAvailable = false, numPermessi
     day.classList.add("not-available");
   } else {
     day.classList.remove("not-available");
-    const partialHtml = `${date.getDate()}<br>Disponibilita\': ${numPermessi}<br>`;
+    const partialHtml = `${date.getDate()}<br>Disponibilità: ${numPermessi}`;
     const checkboxes = listOfPrenotati(date.toDateString());
     day.innerHTML = `${partialHtml}${checkboxes}`;
   }
 };
 
 const listOfPrenotati = (date = "") =>
-  permessi
-    .filter((permesso) => permesso.date === date)
+  Array.from(permessi)
+    .filter(([key, value]) => value.date === date)
     .map(
-      (permesso) =>
-        `<br>${permesso.username}&nbsp;<input type="checkbox" value="${JSON.stringify(
-          permesso
-        )}" onchange=\"checkBoxesEventAdmin(this)\"></input>`
+      ([key, value]) =>
+        `<br>${value.username}&nbsp;<input type="checkbox" value=${key} onchange=\"checkBoxesEventAdmin(this)\"></input>`
     )
     .join("");
 
@@ -249,10 +228,9 @@ const permessiCounter = (date) => {
       : typeof date === "string"
       ? date
       : "";
-  return permessi
+  return Array.from(permessi.values())
     .map((permesso) => new Date(permesso.date).toDateString())
-    .filter((permDate) => permDate === dateStr)
-    .length;
+    .filter((permDate) => permDate === dateStr).length;
 };
 
 const hasPermesso = (date) => {
@@ -263,11 +241,12 @@ const hasPermesso = (date) => {
       ? date
       : "";
   const username = sessionStorage.getItem("username");
-  return permessi
-    .filter((permesso) => permesso.username === username)
-    .map((permesso) => new Date(permesso.date).toDateString())
-    .filter((permDate) => permDate === dateStr)
-    .length > 0;
+  return (
+    Array.from(permessi.values())
+      .filter((permesso) => permesso.username === username)
+      .map((permesso) => new Date(permesso.date).toDateString())
+      .find((permDate) => permDate === dateStr) !== undefined
+  );
 };
 
 const reqLogin = async (usernameInput, passwordInput, errMsgP) => {
@@ -292,34 +271,32 @@ const reqLogin = async (usernameInput, passwordInput, errMsgP) => {
   }
 };
 
-const __login = (htmlStr) => {
-  loginWrapper.innerHTML = htmlStr;
-  homeWrapper.innerHTML = "";
+const __login = () => {
+  rootDiv.innerHTML = loginTemplate.innerHTML;
 
-  const usernameInput = loginWrapper.querySelector("#username");
-  const passwordInput = loginWrapper.querySelector("#password");
-  const submitBtn = loginWrapper.querySelector("button");
-  const errMsgP = loginWrapper.querySelector("#err-msg");
+  const usernameInput = rootDiv.querySelector("#username");
+  const passwordInput = rootDiv.querySelector("#password");
+  const submitBtn = rootDiv.querySelector("button");
+  const errMsgP = rootDiv.querySelector("#err-msg");
 
   submitBtn.addEventListener("click", async () => {
     const loggedIn = await reqLogin(usernameInput, passwordInput, errMsgP);
     if(loggedIn === true) main();
   });
 };
-const __home = (htmlStr) => {
-  homeWrapper.innerHTML = htmlStr;
-  loginWrapper.innerHTML = "";
+const __home = () => {
+  rootDiv.innerHTML = homeTemplate.innerHTML;
 
-  const currMonthH1 = homeWrapper.querySelector(
+  const currMonthH1 = rootDiv.querySelector(
     "#months tbody tr #current-month-td #current-month"
   );
-  const prevMonthBtn = homeWrapper.querySelector(
+  const prevMonthBtn = rootDiv.querySelector(
     "#months tbody tr #prev-month-td #prev-month-btn"
   );
-  const nextMonthBtn = homeWrapper.querySelector(
+  const nextMonthBtn = rootDiv.querySelector(
     "#months tbody tr #next-month-td #next-month-btn"
   );
-  const daysList = homeWrapper.querySelectorAll("#calendar tbody tr td");
+  const daysList = rootDiv.querySelectorAll("#calendar tbody tr td");
 
   prevMonthBtn.addEventListener("click", () =>
     changeMonthBtnEvent(-1, currMonthH1, daysList)
@@ -337,14 +314,10 @@ const main = () => {
   console.log("main | Session storage: ", sessionStorage);
   if (sessionStorage.getItem("username") && sessionStorage.getItem("admin")) {
     console.log("HOME");
-    getHTMLDoc("home")
-      .then(__home)
-      .catch((err) => console.log("main | ", err));
+    __home();
   } else {
     console.log("LOGIN");
-    getHTMLDoc("login")
-      .then(__login)
-      .catch((err) => console.log("main | ", err));
+    __login();
   }
 };
 main();

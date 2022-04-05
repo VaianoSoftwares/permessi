@@ -1,15 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
     <head>
         <meta charset="UTF-8">
         <title>Permessi</title>
 
         <link rel="stylesheet" href="/api/v1/static/index.css">
+        <script src="/api/v1/static/index.js" defer></script>
     </head>
     <body>
-        <div id="login-wrapper"></div>
-        <div id="home-wrapper"></div>
-
-        <script src="/api/v1/static/index.js"></script>
+        <div id="root"></div>
+        <template id="login-template">
+            <div id="login-form" class="container">
+                <div class="row">
+                    <div class="col-25">
+                        <label for="username">Username</label>
+                    </div>
+                    <div class="col-75">
+                        <input type="text" name="username" id="username" required></input>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-25">
+                        <label for="password">Password</label>
+                    </div>
+                    <div class="col-75">
+                        <input type="password" name="password" id="password" required></input>
+                    </div>
+                </div>
+                <div class="row">
+                    <button class="submit-btn">Accedi</button>
+                </div>
+            </div>
+            <p id="err-msg"></p>
+        </template>
+        <template id="home-template">
+            <table id="months" class="center">
+                <tbody>
+                    <tr>
+                        <td id="prev-month-td">
+                            <button id="prev-month-btn">&lt;&lt; mese precedente</button>
+                        </td>
+                        <td id="current-month-td">
+                            <h1 id="current-month"></h1>
+                        </td>
+                        <td id="next-month-td">
+                            <button id="next-month-btn">mese successivo &gt;&gt;</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <table id="calendar" class="center">
+                <thead>
+                    <tr>
+                        <th>Lunedi</th>
+                        <th>Martedi</th>
+                        <th>Mercoledi</th>
+                        <th>Giovedi</th>
+                        <th>Venerdi</th>
+                        <th>Sabato</th>
+                        <th>Domenica</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </template>
     </body>
 </html>

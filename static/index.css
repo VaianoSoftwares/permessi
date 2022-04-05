@@ -1,3 +1,7 @@
+html, body {
+    overflow: hidden;
+}
+
 #months > tbody > tr > td {
     padding-right: 15px;
 }
